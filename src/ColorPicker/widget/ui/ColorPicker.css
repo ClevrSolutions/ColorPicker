@@ -1,0 +1,20 @@
+.ColorPickerWidget input {
+	cursor: pointer;
+}
+.dj_iequirks .ColorPickerWidget input {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    vertical-align : middle !important;
+}
+.ColorPickerWidget .dijitReadOnly *, 
+.ColorPickerWidget .dijitDisabled *, 
+.ColorPickerWidget .dijitReadOnly, 
+.ColorPickerWidget .dijitDisabled, 
+.ColorPickerWidget .dijitDisabledClickableRegion {
+	cursor: default !important;
+}
+
+.ColorPickerWidget .dijitTextBox {
+    border: 0px !important;
+    width: 50px !important;
+}
