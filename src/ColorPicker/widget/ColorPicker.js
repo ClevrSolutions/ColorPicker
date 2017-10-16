@@ -1,28 +1,22 @@
-require({
-	packages: [{
-		name: "jquery19",
-		location: "../../widgets/jQueryLib", main: "jquery-191-min" 
-	}]
-},
 
-["jquery19"], function (jQuery19) {
-
-dojo.provide("ColorPicker.widget.ColorPicker");
-dojo.require("dijit.form.TextBox");
-
-mendix.dom.insertCss(mx.moduleUrl("ColorPicker.widget", "lib/spectrum.css"));
-mendix.dom.insertCss(mx.moduleUrl("ColorPicker.widget", "ui/ColorPicker.css"));
-
-mxui.widget.declare('ColorPicker.widget.ColorPicker', {
+    define([
+        "dojo/_base/declare",
+        "mxui/widget/_WidgetBase",
+        "dojo/_base/kernel",
+        "dojo/dom-class",
+        "mxui/dom",
+        "dijit/form/TextBox",
+        "jquery19"
+    ], function (declare, _WidgetBase, kernel, domClass, dom, dijitForm, jQuery19) {
+        'use strict';
+        return declare("ColorPicker.widget.ColorPicker", [ _WidgetBase ], {
     addons       : [],
-    inputargs: {
 
         name            : '',
         showButtons     : false,
         clickoutChange  : true,
-        defaultColor    : '#000000'
+        defaultColor    : '#000000',
 
-    },
 
     //IMPLEMENTATION
     isInactive 	    : false,
@@ -32,42 +26,50 @@ mxui.widget.declare('ColorPicker.widget.ColorPicker', {
     mxobj           : null,
     _hasStarted     : false,
     ignoreChange    : false,
-
-    startup : function(){
+    
+    postCreate : function(){
+        dom.addCss('widgets/ColorPicker/widget/lib/spectrum.css');
+        dom.addCss('widgets/ColorPicker/widget/ui/ColorPicker.css');
         if (this._hasStarted)
             return;
 
         this._hasStarted = true;
 
-        dojo.require("ColorPicker.widget.lib.spectrum");
+        var code = kernel.locale;
 
-        var code = mx.ui.getLocale();
-
-        switch(code){
+        switch (code) {
             case "nl-nl":
-                dojo.require("ColorPicker.widget.lib.jquery_spectrum-nl");
+                var localization = jQuery19.spectrum.localization["nl-nl"] = {
+                    cancelText: "Annuleer",
+                    chooseText: "Kies",
+                    clearText: "Wis kleur selectie"
+                };
+                jQuery19.extend(jQuery19.fn.spectrum.defaults, localization);
                 break;
             case "de-de":
-                dojo.require("ColorPicker.widget.lib.jquery_spectrum-de");
+                var localization = jQuery19.spectrum.localization["de"] = {
+                    cancelText: "Abbrechen",
+                    chooseText: "Wählen"
+                };
+                jQuery19.extend(jQuery19.fn.spectrum.defaults, localization);
                 break;
         }
 
-        mxui.dom.addClass(this.domNode, 'ColorPickerWidget');
+        domClass.add(this.domNode, 'ColorPickerWidget');
         dojo.attr(this.domNode, 'tabIndex', '-1');
         this.buildColorPicker();
-        this.actLoaded();
     },
 
-    applyContext : function(context, callback) {
-        console.log('apply');
+    update : function(context, callback) {
+        console.log('apply'+ jQuery19.fn.jquery);
 
         logger.debug(this.id + ".applyContext");
 
-        var trackId = context && context.getTrackID();
+        var trackId = context && context.getGuid();
 
         if (trackId) {
 
-            mx.processor.get({
+            mx.data.get({
                 guid     : trackId,
                 callback : dojo.hitch(this, "setSourceObject")
             });
@@ -75,7 +77,10 @@ mxui.widget.declare('ColorPicker.widget.ColorPicker', {
             this.setSourceObject(null);
         }
 
-        callback && callback();
+        if (callback) {
+            callback();
+        }
+
     },
 
     setSourceObject : function(obj) {
@@ -83,29 +88,26 @@ mxui.widget.declare('ColorPicker.widget.ColorPicker', {
         logger.debug(this.id + ".setSourceObject");
 
         this.sourceObject = obj;
-        this.removeSubscriptions();
 
         if(obj) {
-            var guid = obj.getGUID();
-
-            this.subscribeToGuid(guid);
+            var guid = obj.getGuid();
         } else {
             jQuery19('#'+this.ColorPicker.id).spectrum("disable");
         }
     },
 
-    buildColorPicker : function () {
+    buildColorPicker : function (callback) {
 
-        this.ColorPicker = new dijit.form.TextBox({
+        this.ColorPicker = new dijitForm({
             name: this.id+'_tb',
             value: "",
             disabled : this.isInactive
-        }, mxui.dom.div());
+        }, dom.create("div"));
 
         if (this.isInactive)
-            mxui.dom.addClass(this.ColorPicker.domNode, 'MxClient_formDisabled');
+            domClass.add(this.ColorPicker.domNode, 'MxClient_formDisabled');
         else
-            mxui.dom.removeClass(this.ColorPicker.domNode, 'MxClient_formDisabled');
+            domClass.remove(this.ColorPicker.domNode, 'MxClient_formDisabled');
 
         this.domNode.appendChild(this.ColorPicker.domNode);
 
@@ -121,12 +123,19 @@ mxui.widget.declare('ColorPicker.widget.ColorPicker', {
 
     },
 
-    colorChanged : function (value) {
+    resize: function (box) {
+        console.log(this.id + ".resize");
+    },
+
+    colorChanged: function (value) {
         if (value != '') {
             if (value.toHexString() != this.currValue) {
                 this.currValue = value.toHexString();
                 this.sourceObject.set(this.name, this.currValue);
-                this.sourceObject.save({ callback : function () {}});
+                mx.data.commit({
+                    mxobj: this.sourceObject,
+                    callback: function () {}
+                });
             }
         }
     },
@@ -136,11 +145,11 @@ mxui.widget.declare('ColorPicker.widget.ColorPicker', {
         if (this.ColorPicker) {
             this.ColorPicker.attr('disabled', !!value);
             if (value || this.isDisabled) {
-                mxui.dom.addClass(this.ColorPicker.domNode, 'MxClient_formDisabled');
+                domClass.add(this.ColorPicker.domNode, 'MxClient_formDisabled');
                 this.ColorPicker.attr('disabled', true);
             }
             else {
-                mxui.dom.removeClass(this.ColorPicker.domNode, 'MxClient_formDisabled');
+                domClass.remove(this.ColorPicker.domNode, 'MxClient_formDisabled');
                 this.ColorPicker.attr('disabled', false);
             }
         }
@@ -172,4 +181,12 @@ mxui.widget.declare('ColorPicker.widget.ColorPicker', {
         this.ColorPicker.destroy();
     }
 });
+});
+require({
+	packages: [{
+        name: "jquery19",
+		location: "../../widgets/jQueryLib", main: "jquery-191-min"
+	}]
+},["jquery19","ColorPicker/widget/lib/spectrum", "ColorPicker/widget/ColorPicker"], function(jQuery19,spectrum) {
+    'use strict';
 });
