@@ -5,14 +5,12 @@
 
 require({
 	packages: [{
-		name: "jquery19",
-		location: "../../widgets/jQueryLib", main: "jquery-191-min" 
+        name: "jquery19",
+		location: "../../widgets/jQueryLib", main: "jquery-191-min"
 	}]
-},
+},["jquery19"], function (jQuery19) {
 
-["jquery19"], function (jQuery19) {
-
-    dojo.provide("ColorPicker.widget.lib.spectrum");
+    // dojo.provide("ColorPicker.widget.lib.spectrum");
 
     (function (window, undefined) {
         var defaultOpts = {
